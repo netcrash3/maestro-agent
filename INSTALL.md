@@ -126,7 +126,15 @@ Start Claude Code in your project directory, then invoke the maestro agent with 
 > @maestro Add a user profile page with avatar upload and bio editing
 ```
 
-Maestro will run the full 8-stage pipeline:
+For new or blank projects, maestro will ask clarifying questions about your preferred frameworks and languages before starting. For existing projects without architecture documentation, it will suggest running the solution-architect first. For ambiguous requests, it will ask targeted questions to define the feature scope.
+
+To automatically build and launch the project locally after the pipeline completes, append `--run local`:
+
+```
+> @maestro Add a user profile page with avatar upload and bio editing --run local
+```
+
+Maestro will run the full 8-stage pipeline (plus an optional 9th stage with `--run local`):
 
 1. **solution-architect** — architectural analysis
 2. **execution-planner** — detailed implementation plan
@@ -135,7 +143,8 @@ Maestro will run the full 8-stage pipeline:
 5. **code-reviewer** — code review (read-only)
 6. **code-review-cleanup** — applies review fixes
 7. **feature-test-engineer** — writes and runs tests
-8. **doc-cleanup-organizer** — archives outputs, cleans up
+8. **doc-cleanup-organizer** — archives outputs, generates commit message, cleans up
+9. **dev-build-launcher** — *(optional, with `--run local`)* builds and launches locally
 
 When complete, all implementation documentation is archived under `maestro-features/<timestamp>/` and agent output directories are cleared.
 
@@ -160,7 +169,8 @@ maestro-features/<unix_timestamp>/
 ├── frontend_implementation.md   ← frontend summary
 ├── api_docs.md                  ← API documentation snapshot
 ├── test_results.md              ← test report
-└── code_review.md               ← review findings
+├── code_review.md               ← review findings
+└── commit-message.md            ← generated commit message for engineer review
 
 maestro-api-documentation/
 └── api-docs.md                  ← permanent, always-current API reference

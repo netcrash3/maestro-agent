@@ -6,9 +6,11 @@ This document describes how the multi-agent pipeline is orchestrated, how contex
 
 ## Overview
 
-The **maestro** agent is the conductor. It accepts a feature request from the user and drives a strict 8-stage sequential pipeline. No stage is skippable. No parallelism. Each stage's outputs become the next stage's inputs.
+The **maestro** agent is the conductor. It accepts a feature request from the user and drives a strict 8-stage sequential pipeline, with an optional 9th stage. No mandatory stage is skippable. No parallelism. Each stage's outputs become the next stage's inputs.
 
-Two additional agents — `dev-build-launcher` and `deployment-config-agent` — run outside the pipeline at the developer's discretion.
+Before starting the pipeline, maestro assesses the project state and asks clarifying questions when needed — such as framework/language preferences for new projects, missing architecture documentation, new project type expansions, or ambiguous feature requests. All gathered context is passed to the solution-architect.
+
+Two additional agents — `dev-build-launcher` and `deployment-config-agent` — can be run independently at the developer's discretion. The `dev-build-launcher` can also be triggered automatically at the end of a pipeline run by appending `--run local` to the maestro prompt.
 
 ---
 
@@ -40,7 +42,11 @@ User Prompt
     │
     ▼
 [8] doc-cleanup-organizer   → maestro-features/<timestamp>/, maestro-api-documentation/api-docs.md
-                               clears all agent output directories
+                               commit-message.md, clears all agent output directories
+    │
+    ▼
+[9] dev-build-launcher     → (OPTIONAL — only when --run local is specified)
+                               builds and launches the project locally
 ```
 
 ---
@@ -53,15 +59,17 @@ User Prompt
 
 **Responsibilities:**
 - Accepts the user's feature request
-- Invokes each of the 8 sub-agents in order
+- Assesses project state and asks clarifying questions before starting (framework/language choices for new projects, missing architecture docs, ambiguous requirements)
+- Detects the `--run local` flag and strips it from the feature request before passing to sub-agents
+- Invokes each of the 8 mandatory sub-agents in order, plus the optional 9th stage if `--run local` was specified
 - After each stage, reads the required output files from disk to confirm success (verbal confirmation is not sufficient)
 - Retries failed stages up to 2 times before halting
 - Displays a running pipeline status board to the user
-- Reports the final completion summary only after `doc-cleanup-organizer` completes
+- Reports the final completion summary only after all stages complete
 
-**Context forwarded at each stage:** original feature request + all prior stage outputs + a summary of what is complete and what remains.
+**Context forwarded at each stage:** original feature request + all clarification context from pre-pipeline questions + all prior stage outputs + a summary of what is complete and what remains.
 
-**Pipeline enforcement:** Maestro is forbidden from skipping stages, treating any single agent's output as "done", or returning control to the user before all 8 stages and file verification are complete.
+**Pipeline enforcement:** Maestro is forbidden from skipping mandatory stages, treating any single agent's output as "done", or returning control to the user before all 8 mandatory stages and file verification are complete. If `--run local` was specified, stage 9 is also mandatory.
 
 ---
 
@@ -196,11 +204,12 @@ User Prompt
 - `maestro-features/<unix_timestamp>/api_docs.md` ← from api-docs.md
 - `maestro-features/<unix_timestamp>/test_results.md` ← from test_results.md
 - `maestro-features/<unix_timestamp>/code_review.md` ← from code_review_suggestions.md
+- `maestro-features/<unix_timestamp>/commit-message.md` ← generated commit message for engineer review
 - `maestro-api-documentation/api-docs.md` ← permanent copy of current API docs
 
 **Also deletes** all agent output files after archiving (except `.claude/agents/skills/` and `.claude/agents/solution-architect/outputs/` which persist across runs).
 
-**Key behavior:** Never fabricates content — only copies files that exist on disk. Scans for stray `.md` files written to the project root or `features/` root and moves them into the archive. Runs a self-verification checklist confirming all 6 archive files exist and all output directories are empty before reporting completion.
+**Key behavior:** Never fabricates content — only copies files that exist on disk. Generates a structured commit message summarizing all changes (does NOT perform any git operations — the commit message is for the engineer to use after review). Scans for stray `.md` files written to the project root or `features/` root and moves them into the archive. Runs a self-verification checklist confirming all 7 archive files exist and all output directories are empty before reporting completion.
 
 ---
 
@@ -238,10 +247,10 @@ User prompt
 
 ---
 
-## Agents Outside the Pipeline
+## Agents Outside the Pipeline (or Optionally Integrated)
 
 ### dev-build-launcher
-Run separately (not part of the 8-stage pipeline) when you want to verify a feature implementation works end-to-end locally. It discovers the tech stack, installs dependencies (with user confirmation), executes the build, launches all services, and then enters a persistent monitoring loop — auto-repairing compilation errors and runtime crashes as they occur.
+Can be run separately or triggered automatically as pipeline stage 9 by appending `--run local` to the maestro prompt. It discovers the tech stack, installs dependencies (with user confirmation), executes the build, launches all services, and then enters a persistent monitoring loop — auto-repairing compilation errors and runtime crashes as they occur.
 
 ### deployment-config-agent
 Run separately when you need to configure deployment CI/CD pipelines. It supports GitHub Actions, Vercel, and CircleCI. It verifies all secrets and artifact destination URLs are provided, writes environment configuration files and build scripts (Dockerfiles, Terraform, etc.), and ensures the pipeline runs the full test suite before building and pushing artifacts to your cloud provider (AWS, GCP, or Azure). It writes configuration only — it never executes deployments.
@@ -282,7 +291,8 @@ maestro-features/
     ├── frontend_implementation.md
     ├── api_docs.md
     ├── test_results.md
-    └── code_review.md
+    ├── code_review.md
+    └── commit-message.md
 ```
 
 ---
@@ -300,4 +310,4 @@ After each stage, maestro reads these files to confirm success before advancing:
 | code-reviewer | `code_review_suggestions.md` + `git diff` confirms no source changes |
 | code-review-cleanup | both updated `new_feature_implementation.md` files |
 | feature-test-engineer | `test_results.md` |
-| doc-cleanup-organizer | all 6 archive files exist + all output dirs are empty + `maestro-api-documentation/api-docs.md` exists |
+| doc-cleanup-organizer | all 7 archive files exist (including `commit-message.md`) + all output dirs are empty + `maestro-api-documentation/api-docs.md` exists |

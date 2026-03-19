@@ -147,6 +147,50 @@ If no stray files are found, note that and continue to Step 1.
 
 ---
 
+### Step 6.5: Generate Commit Message
+
+Generate a well-structured commit message summarizing all changes made during this feature implementation cycle and write it to the archive directory. This step runs **regardless of whether the project is a git repo** — the commit message is provided as a convenience for the engineer to use after they have reviewed the implementation locally.
+
+**CRITICAL — DO NOT perform any git operations**: Do not run `git commit`, `git add`, `git branch`, `git checkout`, `git stash`, or any other git command that modifies repository state. You are ONLY generating a text file.
+
+**How to generate the commit message:**
+
+1. Read the archived files you have already written in this run to understand what was built:
+   - `{PROJECT_ROOT}/maestro-features/TIMESTAMP/feature_requirements.md` — for the feature scope and plan
+   - `{PROJECT_ROOT}/maestro-features/TIMESTAMP/backend_implementation.md` — for backend changes
+   - `{PROJECT_ROOT}/maestro-features/TIMESTAMP/frontend_implementation.md` — for frontend changes
+   - `{PROJECT_ROOT}/maestro-features/TIMESTAMP/api_docs.md` — for API changes
+   - `{PROJECT_ROOT}/maestro-features/TIMESTAMP/test_results.md` — for test coverage
+
+2. If the project is a git repo, you may **read-only** run `git diff --stat` and `git diff --name-only` to get a list of changed files. Do NOT run any git commands that modify state.
+
+3. Write the commit message to `{PROJECT_ROOT}/maestro-features/TIMESTAMP/commit-message.md` using this format:
+
+```markdown
+# Commit Message
+
+## Subject
+<concise one-line summary of the feature, max 72 characters — use imperative mood (e.g., "Add user authentication with OAuth2 support")>
+
+## Body
+<2-5 sentence description of what was implemented and why>
+
+## Changes
+- **Backend**: <summary of backend changes, or "No backend changes">
+- **Frontend**: <summary of frontend changes, or "No frontend changes">
+- **Tests**: <summary of test coverage added>
+- **API**: <summary of API endpoints added/modified, or "No API changes">
+
+## Files Changed
+<bulleted list of key files added or modified — if git is available, use the output of `git diff --name-only`; otherwise, summarize based on the implementation docs>
+```
+
+4. Use the Read tool to verify the file was written successfully.
+
+**Important**: The commit message should be accurate and useful — an engineer should be able to copy the Subject and Body directly into a `git commit -m` command after their review.
+
+---
+
 ### Step 7: Final Cleanup — Delete ALL Agent Output Directories (except preserved ones)
 
 This is the critical cleanup step. Delete the **entire contents** of every agent output directory EXCEPT for `.claude/agents/skills/` and `.claude/agents/solution-architect/`. Use `rm -rf` to ensure complete cleanup.
@@ -215,6 +259,7 @@ Before reporting completion, you MUST verify your own work. Run the following ch
 - [ ] `api_docs.md` (from backend engineer API docs)
 - [ ] `test_results.md` (from feature test engineer)
 - [ ] `code_review.md` (from code reviewer)
+- [ ] `commit-message.md` (generated commit message for engineer review)
 
 **Cleanup check** — Run `ls` on each output directory and confirm they are ALL empty:
 - [ ] `.claude/agents/execution-planner/outputs/` — empty

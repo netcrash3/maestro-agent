@@ -8,9 +8,11 @@ Building a feature with an AI coding assistant is often a back-and-forth loop. Y
 
 ## What Maestro Does
 
-Maestro replaces that ad-hoc loop with a semi-deterministic, 8-stage pipeline. You describe a feature once. Maestro runs it through a sequence of specialized agents — each with a defined role, constrained scope, and verified output — then hands you back working code with tests, a code review, and archived documentation.
+Maestro replaces that ad-hoc loop with a semi-deterministic, 8-stage pipeline (with an optional 9th). You describe a feature once. Maestro runs it through a sequence of specialized agents — each with a defined role, constrained scope, and verified output — then hands you back working code with tests, a code review, a ready-to-use commit message, and archived documentation.
 
-No stage is skipped. No agent moves forward until the previous one's output files are verified on disk. The pipeline either completes fully or stops and tells you exactly where it failed.
+Before starting, maestro assesses your project and asks the right questions. For a new project, it asks about framework and language preferences. For an existing project missing architecture docs, it suggests generating them first. For ambiguous requests, it asks clarifying questions about scope, behavior, and integrations. All of this context flows into the pipeline so the agents make informed decisions instead of guessing.
+
+No mandatory stage is skipped. No agent moves forward until the previous one's output files are verified on disk. The pipeline either completes fully or stops and tells you exactly where it failed. Append `--run local` to your prompt and maestro will also build and launch the project locally as a 9th stage.
 
 That's not to say that you shouldn't still take a look at the code that you plan to move to production and ensure that maestro has in fact produced code that lives up to your coding standards.
 
@@ -47,8 +49,13 @@ You: "Add user profile pages with avatar upload"
  │                            Reports coverage and results.
  ▼
 [8] Doc Cleanup Organizer ─  Archives all pipeline outputs into
-                              maestro-features/<timestamp>/.
-                              Cleans up all intermediate agent files.
+ │                            maestro-features/<timestamp>/.
+ │                            Generates a commit message. Cleans up
+ │                            all intermediate agent files.
+ ▼
+[9] Dev Build Launcher   ─  (OPTIONAL — with --run local)
+                              Builds and launches the project locally
+                              for manual verification.
 ```
 
 Each agent reads the outputs of every agent before it. Context flows forward through the entire pipeline — the frontend engineer sees the backend's API docs, the code reviewer sees the architecture decisions and the execution plan, and the test engineer sees everything.
@@ -61,7 +68,7 @@ Each agent reads the outputs of every agent before it. Context flows forward thr
 
 **Your conventions are enforced automatically.** The `maestro-rules/rules.md` file defines your coding standards — naming conventions, patterns, architectural boundaries. Every agent that writes or reviews code reads this file. Your rules are applied consistently across backend, frontend, review, and testing.
 
-**Full documentation trail for every feature.** Each pipeline run produces a timestamped archive with the execution plan, implementation summaries, API docs, test results, and code review findings. Six months from now, you can look at `maestro-features/1709912345/` and understand exactly what was built, why, and what was reviewed.
+**Full documentation trail for every feature.** Each pipeline run produces a timestamped archive with the execution plan, implementation summaries, API docs, test results, code review findings, and a ready-to-use commit message. Six months from now, you can look at `maestro-features/1709912345/` and understand exactly what was built, why, and what was reviewed.
 
 **API documentation stays current.** The backend engineer produces API docs every run. The doc cleanup organizer copies them to a permanent location. Your API documentation is always up to date — not because someone remembered to update it, but because the pipeline requires it.
 
@@ -80,7 +87,8 @@ maestro-features/<timestamp>/
 ├── frontend_implementation.md   # What was built on the frontend
 ├── api_docs.md                  # API documentation snapshot
 ├── test_results.md              # Test coverage and results
-└── code_review.md               # Review findings and resolutions
+├── code_review.md               # Review findings and resolutions
+└── commit-message.md            # Ready-to-use commit message
 
 maestro-api-documentation/
 └── api-docs.md                  # Always-current API reference
@@ -90,7 +98,7 @@ maestro-api-documentation/
 
 Two agents operate outside the pipeline and can be invoked independently:
 
-- **`dev-build-launcher`** — Discovers your tech stack, installs dependencies, builds the project, launches all services, and enters a monitoring loop that auto-repairs compilation errors and runtime crashes as they occur. Use it after a pipeline run to verify everything works end-to-end.
+- **`dev-build-launcher`** — Discovers your tech stack, installs dependencies, builds the project, launches all services, and enters a monitoring loop that auto-repairs compilation errors and runtime crashes as they occur. Can be run standalone after a pipeline run, or triggered automatically by appending `--run local` to your maestro prompt.
 
 - **`deployment-config-agent`** — Configures deployment CI/CD pipelines for GitHub Actions, Vercel, or CircleCI. Verifies all secrets are provided, writes environment configuration files and build scripts (Dockerfiles, Terraform, etc.), and ensures the pipeline runs the full test suite — including spinning up containers for integration tests — before building the final artifact. This agent writes configuration only and never executes deployments; the pipeline itself handles that.
 
