@@ -2,6 +2,7 @@
 name: execution-planner
 description: "Use this agent when a user provides a high-level request or feature that needs to be broken down into a structured, step-by-step execution plan. The agent will consult the project's architecture guide before producing a plan and output results to /outputs/execution_plan.md."
 model: sonnet
+tools: Glob, Grep, Read, Bash, Write
 memory: local
 ---
 

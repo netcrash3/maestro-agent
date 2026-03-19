@@ -10,7 +10,7 @@ Building a feature with an AI coding assistant is often a back-and-forth loop. Y
 
 Maestro replaces that ad-hoc loop with a semi-deterministic, 8-stage pipeline (with an optional 9th). You describe a feature once. Maestro runs it through a sequence of specialized agents — each with a defined role, constrained scope, and verified output — then hands you back working code with tests, a code review, a ready-to-use commit message, and archived documentation.
 
-Before starting, maestro assesses your project and asks the right questions. For a new project, it asks about framework and language preferences. For an existing project missing architecture docs, it suggests generating them first. For ambiguous requests, it asks clarifying questions about scope, behavior, and integrations. All of this context flows into the pipeline so the agents make informed decisions instead of guessing.
+Before the pipeline starts, Claude Code assesses your project and asks the right questions. For a new project, it asks about framework and language preferences. For an existing project missing architecture docs, it suggests generating them first. For ambiguous requests, it asks clarifying questions about scope, behavior, and integrations. All of this context is gathered before maestro is invoked, so it flows into the pipeline from the start and the agents make informed decisions instead of guessing.
 
 No mandatory stage is skipped. No agent moves forward until the previous one's output files are verified on disk. The pipeline either completes fully or stops and tells you exactly where it failed. Append `--run local` to your prompt and maestro will also build and launch the project locally as a 9th stage.
 

@@ -8,7 +8,7 @@ This document describes how the multi-agent pipeline is orchestrated, how contex
 
 The **maestro** agent is the conductor. It accepts a feature request from the user and drives a strict 8-stage sequential pipeline, with an optional 9th stage. No mandatory stage is skippable. No parallelism. Each stage's outputs become the next stage's inputs.
 
-Before starting the pipeline, maestro assesses the project state and asks clarifying questions when needed — such as framework/language preferences for new projects, missing architecture documentation, new project type expansions, or ambiguous feature requests. All gathered context is passed to the solution-architect.
+Before maestro is invoked, Claude Code (the caller) assesses the project state and asks the user clarifying questions when needed — such as framework/language preferences for new projects, missing architecture documentation, new project type expansions, or ambiguous feature requests. All gathered context is included in the prompt passed to maestro, which forwards it to the solution-architect.
 
 Two additional agents — `dev-build-launcher` and `deployment-config-agent` — can be run independently at the developer's discretion. The `dev-build-launcher` can also be triggered automatically at the end of a pipeline run by appending `--run local` to the maestro prompt.
 
@@ -58,8 +58,7 @@ User Prompt
 **Role:** Pipeline conductor. Does not implement any work itself — only delegates and verifies.
 
 **Responsibilities:**
-- Accepts the user's feature request
-- Assesses project state and asks clarifying questions before starting (framework/language choices for new projects, missing architecture docs, ambiguous requirements)
+- Receives the user's feature request along with all pre-gathered context (technology choices, clarification answers) from the caller
 - Detects the `--run local` flag and strips it from the feature request before passing to sub-agents
 - Invokes each of the 8 mandatory sub-agents in order, plus the optional 9th stage if `--run local` was specified
 - After each stage, reads the required output files from disk to confirm success (verbal confirmation is not sufficient)
@@ -67,7 +66,9 @@ User Prompt
 - Displays a running pipeline status board to the user
 - Reports the final completion summary only after all stages complete
 
-**Context forwarded at each stage:** original feature request + all clarification context from pre-pipeline questions + all prior stage outputs + a summary of what is complete and what remains.
+**Pre-pipeline context gathering (handled by the caller, NOT by maestro):** Before maestro is invoked, Claude Code (the caller) assesses the project state and asks the user any necessary clarifying questions — framework/language choices for new projects, missing architecture documentation, technology choices for new project type expansions, and targeted questions for ambiguous requirements. All answers are included in the prompt passed to maestro, which forwards them to the solution-architect.
+
+**Context forwarded at each stage:** original feature request + all pre-gathered clarification context + all prior stage outputs + a summary of what is complete and what remains.
 
 **Pipeline enforcement:** Maestro is forbidden from skipping mandatory stages, treating any single agent's output as "done", or returning control to the user before all 8 mandatory stages and file verification are complete. If `--run local` was specified, stage 9 is also mandatory.
 

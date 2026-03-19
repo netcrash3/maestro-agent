@@ -126,7 +126,7 @@ Start Claude Code in your project directory, then invoke the maestro agent with 
 > @maestro Add a user profile page with avatar upload and bio editing
 ```
 
-For new or blank projects, maestro will ask clarifying questions about your preferred frameworks and languages before starting. For existing projects without architecture documentation, it will suggest running the solution-architect first. For ambiguous requests, it will ask targeted questions to define the feature scope.
+Before invoking the pipeline, Claude Code will assess your project and ask clarifying questions if needed — such as preferred frameworks and languages for new projects, whether to generate architecture documentation for existing projects that lack it, or targeted questions to define ambiguous feature scope. Once all context is gathered, it invokes maestro with the full picture.
 
 To automatically build and launch the project locally after the pipeline completes, append `--run local`:
 
